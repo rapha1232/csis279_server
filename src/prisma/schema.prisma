@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  UserID    Int         @id @default(autoincrement())
+  FirstName String      @db.VarChar(100)
+  LastName  String      @db.VarChar(100)
+  Email     String      @unique(map: "Email") @db.VarChar(100)
+  Password  String      @db.VarChar(255)
+  replies   Replies[]
+  questions Questions[]
+  likes     Likes[]
+  saved     Saved[]
+  events    Events[]
+  topics    Topics[]
+}
+
+model Saved {
+  SavedID    Int        @id @default(autoincrement())
+  UserID     Int
+  EventID    Int?
+  TopicID    Int?
+  QuestionID Int?
+  User       User       @relation(fields: [UserID], references: [UserID])
+  Event      Events?    @relation(fields: [EventID], references: [EventID])
+  Topic      Topics?    @relation(fields: [TopicID], references: [TopicID])
+  Question   Questions? @relation(fields: [QuestionID], references: [QuestionID])
+
+  @@unique([EventID, UserID], map: "unique_event_saved")
+  @@unique([TopicID, UserID], map: "unique_topic_saved")
+  @@unique([QuestionID, UserID], map: "unique_question_saved")
+  @@index([EventID], map: "EventID_idx")
+  @@index([TopicID], map: "FK_TopicID_idx")
+  @@index([UserID], map: "UserID_idx")
+  @@index([QuestionID], map: "QuestionID_idx")
+}
+
+model Events {
+  EventID     Int      @id @default(autoincrement())
+  Title       String   @db.VarChar(100)
+  Description String   @db.Text
+  Date        DateTime @db.Date
+  Location    String   @db.VarChar(255)
+  CreatorID   Int
+  CreatedBy   User     @relation(fields: [CreatorID], references: [UserID])
+  LikesNB     Int      @default(0)
+  Saved       Saved[]
+  Likes       Likes[]
+}
+
+model Likes {
+  LikeID     Int        @id @default(autoincrement())
+  UserID     Int
+  EventID    Int?
+  TopicID    Int?
+  QuestionID Int?
+  ReplyID    Int?
+  User       User       @relation(fields: [UserID], references: [UserID])
+  Event      Events?    @relation(fields: [EventID], references: [EventID])
+  Topic      Topics?    @relation(fields: [TopicID], references: [TopicID])
+  Question   Questions? @relation(fields: [QuestionID], references: [QuestionID])
+  Reply      Replies?   @relation(fields: [ReplyID], references: [ReplyID])
+
+  @@unique([EventID, UserID], map: "unique_event_like")
+  @@unique([TopicID, UserID], map: "unique_topic_like")
+  @@unique([QuestionID, UserID], map: "unique_question_like")
+  @@unique([ReplyID, UserID], map: "unique_reply_like")
+}
+
+model Topics {
+  TopicID   Int       @id @default(autoincrement())
+  Title     String    @db.VarChar(100)
+  Content   String    @db.Text
+  CreatedAt DateTime  @db.Timestamp(3)
+  CreatorID Int
+  CreatedBy User      @relation(fields: [CreatorID], references: [UserID])
+  LikesNb   Int       @default(0)
+  Saved     Saved[]
+  Likes     Likes[]
+  Replies   Replies[]
+}
+
+model Questions {
+  QuestionID Int       @id @default(autoincrement())
+  Title      String    @db.VarChar(100)
+  Content    String    @db.Text
+  CreatedAt  DateTime  @db.Timestamp(3)
+  CreatorID  Int
+  CreatedBy  User      @relation(fields: [CreatorID], references: [UserID])
+  LikesNb    Int       @default(0)
+  Replies    Replies[]
+  Saved      Saved[]
+  Likes      Likes[]
+}
+
+model Replies {
+  ReplyID    Int        @id @default(autoincrement())
+  Content    String     @db.Text
+  CreatedAt  DateTime   @db.Timestamp(3)
+  CreatorID  Int
+  CreatedBy  User       @relation(fields: [CreatorID], references: [UserID])
+  Question   Questions? @relation(fields: [QuestionID], references: [QuestionID])
+  QuestionID Int?
+  Topic      Topics?    @relation(fields: [TopicID], references: [TopicID])
+  TopicID    Int?
+  LikesNB    Int        @default(0)
+  Likes      Likes[]
+}
